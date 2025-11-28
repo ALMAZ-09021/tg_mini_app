@@ -636,7 +636,7 @@ body {
 /* Полупрозрачный фон */
 .help-overlay {
   opacity: 0;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.5s ease;
 }
 
 .help-overlay.show {
@@ -647,7 +647,7 @@ body {
 .help-modal {
   opacity: 0;
   transform: translateY(15px) scale(0.96);
-  transition: all 0.35s ease;
+  transition: all 0.5s ease;
 }
 
 .help-modal.show {

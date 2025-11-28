@@ -14,7 +14,24 @@ function App() {
     const [result, setResult] = useState('');
     const [loading, setLoading] = useState(false);
     const [pdfLoading, setPdfLoading] = useState(false);
-    const [showHelp, setShowHelp] = useState(false); // Состояние для окна помощи
+    const [showHelp, setShowHelp] = useState(false);
+    const [helpAnimating, setHelpAnimating] = useState(false);
+
+    // Функция открытия окна
+    const openHelp = () => {
+        setShowHelp(true);
+        setTimeout(() => {
+            setHelpAnimating(true);
+        }, 10);
+    };
+
+    // Функция закрытия окна
+    const closeHelp = () => {
+        setHelpAnimating(false);
+        setTimeout(() => {
+            setShowHelp(false);
+        }, 500);
+    };
 
     // Геймификация
     const [coins, setCoins] = useState(1500);
@@ -161,11 +178,10 @@ function App() {
             <div className="content-wrapper">
 
                 {/* User Profile Card */}
-                <div className="user-card" style={{ position: 'relative' }}>
+                <div className="user-card" style={{position: 'relative'}}>
 
-                    {/* Кнопка помощи */}
                     <button
-                        onClick={() => setShowHelp(true)}
+                        onClick={openHelp}
                         style={{
                             position: 'absolute',
                             top: '15px',
@@ -173,12 +189,10 @@ function App() {
                             width: '30px',
                             height: '30px',
                             borderRadius: '50%',
-                            // 👇 ИЗМЕНЕНИЯ ЗДЕСЬ
-                            background: '#ff4b4b',        // Яркий красный фон
-                            border: '2px solid #ff4b4b',  // Красная обводка
-                            color: 'white',               // Белый значок
-                            boxShadow: '0 4px 12px rgba(255, 75, 75, 0.4)', // Красивая тень
-                            // 👆
+                            background: '#ff4b4b',
+                            border: '2px solid #ff4b4b',
+                            color: 'white',
+                            boxShadow: '0 4px 12px rgba(255, 75, 75, 0.4)',
                             fontSize: '18px',
                             fontWeight: 'bold',
                             cursor: 'pointer',
@@ -186,12 +200,11 @@ function App() {
                             alignItems: 'center',
                             justifyContent: 'center',
                             zIndex: 10,
-                            transition: 'transform 0.2s' // Анимация нажатия (опционально)
+                            transition: 'transform 0.2s'
                         }}
                     >
                         ?
                     </button>
-
 
                     <div className="user-info-container">
                         <div className="user-avatar">
@@ -229,7 +242,7 @@ function App() {
                         type="file"
                         ref={fileInputRef}
                         onChange={(e) => setFile(e.target.files[0])}
-                        style={{ display: 'none' }}
+                        style={{display: 'none'}}
                         accept=".csv,.pdf,.txt,.xlsx"
                     />
 
@@ -362,6 +375,7 @@ function App() {
             {/* Help Modal */}
             {showHelp && (
                 <div
+                    className={`help-overlay ${helpAnimating ? 'show' : ''}`}
                     style={{
                         position: 'fixed',
                         top: 0,
@@ -375,9 +389,10 @@ function App() {
                         zIndex: 1000,
                         backdropFilter: 'blur(3px)'
                     }}
-                    onClick={() => setShowHelp(false)}
+                    onClick={closeHelp}
                 >
                     <div
+                        className={`help-modal ${helpAnimating ? 'show' : ''}`}
                         style={{
                             backgroundColor: 'var(--tg-theme-bg-color, white)',
                             color: 'var(--tg-theme-text-color, black)',
@@ -419,7 +434,7 @@ function App() {
                         </div>
 
                         <button
-                            onClick={() => setShowHelp(false)}
+                            onClick={closeHelp}
                             style={{
                                 marginTop: '25px',
                                 width: '100%',
