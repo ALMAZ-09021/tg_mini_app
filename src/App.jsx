@@ -6,7 +6,7 @@ import loaderAnimation from './assets/loader.json';
 
 // Ссылки на n8n
 const N8N_WEBHOOK_URL = 'https://tender1acc.app.n8n.cloud/webhook/f275c34f-8416-407b-a869-48c3362becfb';
-const PDF_WEBHOOK_URL = 'https://tender1acc.app.n8n.cloud/webhook-test/a8c660bb-76ef-4a31-a0c5-78d3ee419436';
+const PDF_WEBHOOK_URL = 'https://tender1acc.app.n8n.cloud/webhook/a8c660bb-76ef-4a31-a0c5-78d3ee419436';
 
 function App() {
     const [userData, setUserData] = useState(null);
@@ -14,6 +14,7 @@ function App() {
     const [result, setResult] = useState('');
     const [loading, setLoading] = useState(false);
     const [pdfLoading, setPdfLoading] = useState(false);
+    const [showHelp, setShowHelp] = useState(false); // Состояние для окна помощи
 
     // Геймификация
     const [coins, setCoins] = useState(1500);
@@ -48,7 +49,6 @@ function App() {
                     if (saved) setResult(saved);
                 }
             } else {
-                // Мок-данные для разработки в браузере
                 setUserData({ id: 'dev_12345', first_name: 'Developer' });
                 const saved = localStorage.getItem('last_analysis');
                 if (saved) setResult(saved);
@@ -85,8 +85,6 @@ function App() {
             }
 
             setResult(finalOutput);
-
-            // Награды
             setCoins(prev => prev + 50);
             setFilesAnalyzed(prev => prev + 1);
 
@@ -103,11 +101,8 @@ function App() {
         }
     };
 
-    // === ВОТ НОВАЯ ФУНКЦИЯ ДЛЯ ОТПРАВКИ PDF В ЧАТ ===
     const handleDownloadPDF = async () => {
         if (!result) return;
-
-        // Проверяем, что у нас есть Chat ID
         const chatId = userData?.id;
         if (!chatId) {
             alert('Ошибка: Не удалось определить ваш Chat ID');
@@ -121,7 +116,7 @@ function App() {
             formData.append('result', result);
             formData.append('fileName', file?.name || 'document');
             formData.append('userName', userData?.first_name || 'User');
-            formData.append('chatId', chatId); // <--- ГЛАВНОЕ ИЗМЕНЕНИЕ: Отправляем Chat ID
+            formData.append('chatId', chatId);
 
             const response = await fetch(PDF_WEBHOOK_URL, {
                 method: 'POST',
@@ -129,29 +124,18 @@ function App() {
             });
 
             if (response.ok) {
-                // Теперь мы ждем JSON, а не blob
                 const data = await response.json();
-
                 if (data.success) {
-                    // Показываем сообщение об успехе
                     if (isTelegramEnv && WebApp.isVersionAtLeast('6.2')) {
-                        // Если доступен showAlert, используем его
                         WebApp.showAlert('✅ PDF отправлен в чат и доступен для скачивания!');
-
-                        // Вибрация успеха
-                        if (WebApp.HapticFeedback) {
-                            WebApp.HapticFeedback.notificationOccurred('success');
-                        }
+                        if (WebApp.HapticFeedback) WebApp.HapticFeedback.notificationOccurred('success');
                     } else {
-                        // Fallback для старых версий или браузера
                         alert('✅ PDF отправлен в чат!');
                     }
                 } else {
                     alert('Ошибка: ' + (data.message || 'Неизвестная ошибка'));
                 }
             } else {
-                const errorText = await response.text();
-                console.error('Server error:', errorText);
                 alert('Ошибка сервера: ' + response.status);
             }
         } catch (error) {
@@ -165,7 +149,6 @@ function App() {
     const handleClearHistory = () => {
         setResult('');
         setFile(null);
-
         if (isTelegramEnv && WebApp.isVersionAtLeast('6.9')) {
             WebApp.CloudStorage.removeItem('last_analysis');
         } else {
@@ -178,7 +161,38 @@ function App() {
             <div className="content-wrapper">
 
                 {/* User Profile Card */}
-                <div className="user-card">
+                <div className="user-card" style={{ position: 'relative' }}>
+
+                    {/* Кнопка помощи */}
+                    <button
+                        onClick={() => setShowHelp(true)}
+                        style={{
+                            position: 'absolute',
+                            top: '15px',
+                            right: '15px',
+                            width: '30px',
+                            height: '30px',
+                            borderRadius: '50%',
+                            // 👇 ИЗМЕНЕНИЯ ЗДЕСЬ
+                            background: '#ff4b4b',        // Яркий красный фон
+                            border: '2px solid #ff4b4b',  // Красная обводка
+                            color: 'white',               // Белый значок
+                            boxShadow: '0 4px 12px rgba(255, 75, 75, 0.4)', // Красивая тень
+                            // 👆
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 10,
+                            transition: 'transform 0.2s' // Анимация нажатия (опционально)
+                        }}
+                    >
+                        ?
+                    </button>
+
+
                     <div className="user-info-container">
                         <div className="user-avatar">
                             <img
@@ -344,9 +358,88 @@ function App() {
                 </div>
 
             </div>
+
+            {/* Help Modal */}
+            {showHelp && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        backdropFilter: 'blur(3px)'
+                    }}
+                    onClick={() => setShowHelp(false)}
+                >
+                    <div
+                        style={{
+                            backgroundColor: 'var(--tg-theme-bg-color, white)',
+                            color: 'var(--tg-theme-text-color, black)',
+                            padding: '24px',
+                            borderRadius: '20px',
+                            width: '85%',
+                            maxWidth: '320px',
+                            boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+                            position: 'relative'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h3 style={{marginTop: 0, marginBottom: '15px', fontSize: '20px'}}>Как это работает?</h3>
+
+                        <div style={{display: 'flex', gap: '15px', flexDirection: 'column'}}>
+                            <div style={{display: 'flex', gap: '12px', alignItems: 'flex-start'}}>
+                                <span style={{fontSize: '20px', background: '#e6f3ff', padding: '8px', borderRadius: '10px'}}>📂</span>
+                                <div>
+                                    <strong style={{display: 'block', fontSize: '14px'}}>1. Загрузите файл</strong>
+                                    <span style={{fontSize: '13px', color: '#888', lineHeight: '1.4'}}>Поддерживаем CSV, Excel, PDF. Просто выберите документ с телефона.</span>
+                                </div>
+                            </div>
+
+                            <div style={{display: 'flex', gap: '12px', alignItems: 'flex-start'}}>
+                                <span style={{fontSize: '20px', background: '#fff0e6', padding: '8px', borderRadius: '10px'}}>🤖</span>
+                                <div>
+                                    <strong style={{display: 'block', fontSize: '14px'}}>2. AI Анализ</strong>
+                                    <span style={{fontSize: '13px', color: '#888', lineHeight: '1.4'}}>Наш агент изучит содержимое и подготовит подробный отчет.</span>
+                                </div>
+                            </div>
+
+                            <div style={{display: 'flex', gap: '12px', alignItems: 'flex-start'}}>
+                                <span style={{fontSize: '20px', background: '#e6ffe6', padding: '8px', borderRadius: '10px'}}>📨</span>
+                                <div>
+                                    <strong style={{display: 'block', fontSize: '14px'}}>3. Получите отчет</strong>
+                                    <span style={{fontSize: '13px', color: '#888', lineHeight: '1.4'}}>Нажмите кнопку "Отправить в чат", и бот пришлет готовый PDF документ.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => setShowHelp(false)}
+                            style={{
+                                marginTop: '25px',
+                                width: '100%',
+                                padding: '12px',
+                                background: 'var(--tg-theme-button-color, #2481cc)',
+                                color: 'var(--tg-theme-button-text-color, white)',
+                                border: 'none',
+                                borderRadius: '12px',
+                                fontSize: '16px',
+                                fontWeight: '600',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Понятно
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
 
 export default App;
-
